@@ -30,61 +30,20 @@ const aiAutoResponder = require('./utils/aiAutoResponder');
 const summarizer = require('./utils/aiSummarization');
 
 // ----------- DATABASE CONNECTION -----------
-// SyncPilot Routes
-// ----------- SESSION STORE -----------
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'modernchat-fallback-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGO_URI,
-        ttl: 14 * 24 * 60 * 60
-    }),
-    cookie: {
-        maxAge: 14 * 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true
-    }
-}));
-
-// ✅ SyncPilot Routes (AFTER session)
-app.get('/syncpilot/generate', (req, res) => {
-    if (!req.session || !req.session.userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    const token = syncpilot.generateToken(req.session.userId);
-    res.json({ token });
-});
-
-app.get('/syncpilot/connect', (req, res) => {
-    const { token } = req.query;
-    const userId = syncpilot.validateToken(token);
-    res.render('syncpilot_connect', { success: !!userId });
-});
-
-
-const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/modernchat';
+const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/modernchat';
 mongoose.connect(mongoUri).then(() => console.log("MongoDB connected successfully!"))
   .catch((err) => {
     console.error("MongoDB connection error:", err);
     console.log("Make sure MongoDB is running or check your MONGO_URI environment variable");
   });
 
-// ----------- MIDDLEWARE -----------
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/media', express.static(path.join(__dirname, 'public', 'media')));
-app.use('/voice', express.static(path.join(__dirname, 'public', 'voice')));
-app.set('view engine', 'ejs');
-
 // ----------- SESSION STORE -----------
-app.use(session({
+const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || 'modernchat-fallback-secret-key',
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.MONGO_URI,
+        mongoUrl: mongoUri,
         ttl: 14 * 24 * 60 * 60
     }),
     cookie: {
@@ -92,7 +51,9 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true
     }
-}));
+});
+
+app.use(sessionMiddleware);
 
 // ----------- SESSION ROTATION MIDDLEWARE -----------
 app.use((req, res, next) => {
