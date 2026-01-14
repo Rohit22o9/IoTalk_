@@ -1,0 +1,189 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= community.name %> | Community</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/ui-enhancements.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f5f3ff', 100: '#ede9fe',
+              500: '#8b5cf6', 600: '#7c3aed',
+              700: '#6d28d9', 800: '#5b21b6', 900: '#4c1d95',
+            },
+            secondary: {
+              50: '#f8fafc', 100: '#f1f5f9',
+              500: '#64748b', 600: '#475569',
+              700: '#334155', 800: '#1e293b', 900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="h-screen bg-[#020617] text-slate-200">
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-primary-900/10 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-900/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
+  </div>
+  <div class="relative h-full flex flex-col">
+    <!-- Header -->
+    <header class="bg-[#020617]/80 backdrop-blur-xl border-b border-white/5 px-6 py-6 sticky top-0 z-20">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center space-x-5 min-w-0">
+          <form action="/communities" method="GET" class="inline flex-shrink-0">
+            <button type="submit" class="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </button>
+          </form>
+          <img src="<%= community.icon || '/group_icons/default.png' %>" 
+               alt="<%= community.name %>" 
+               class="w-14 h-14 rounded-2xl object-cover border-2 border-white/10 shadow-2xl">
+          <div class="min-w-0">
+            <h1 class="text-2xl font-bold text-white truncate"><%= community.name %></h1>
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5"><%= community.members.length %> MEMBERS</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-3 flex-shrink-0">
+          <% if (community.admin._id.toString() === currentUser._id.toString() || community.moderators.some(mod => mod._id.toString() === currentUser._id.toString())) { %>
+            <button onclick="toggleInviteModal()" class="px-5 py-2.5 bg-white/5 border border-white/10 text-slate-300 font-bold rounded-xl hover:bg-white/10 transition-all">
+              Invite
+            </button>
+          <% } %>
+          
+          <% if (community.admin._id.toString() === currentUser._id.toString() || community.settings.allowGroupCreation || community.moderators.some(mod => mod._id.toString() === currentUser._id.toString())) { %>
+            <a href="/communities/<%= community._id %>/create-group" class="btn-primary px-5 py-2.5 rounded-xl font-bold shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+              New Group
+            </a>
+          <% } %>
+        </div>
+      </div>
+    </header>
+
+    <!-- Community Content -->
+    <main class="flex-1 overflow-y-auto p-8">
+      <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Community Description -->
+        <% if (community.description) { %>
+          <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">About Community</h2>
+            <p class="text-slate-300 leading-relaxed text-lg"><%= community.description %></p>
+          </div>
+        <% } %>
+
+        <!-- Groups Section -->
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+          <div class="flex items-center justify-between mb-8">
+            <h2 class="text-2xl font-bold text-white">Groups</h2>
+            <span class="bg-primary-600/20 text-primary-400 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest">
+              <%= groups.length %> TOTAL
+            </span>
+          </div>
+
+          <% if (groups.length === 0) { %>
+            <div class="text-center py-16 bg-white/5 rounded-3xl border border-dashed border-white/10">
+              <div class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="h-8 w-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.196-2.121M8 20H3v-2a3 3 0 015.196-2.121M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+              </div>
+              <h3 class="text-lg font-bold text-slate-300">No groups in this community</h3>
+              <p class="text-sm text-slate-500 mt-2">Be the first to create a group!</p>
+            </div>
+          <% } else { %>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <% groups.forEach(group => { %>
+                <div class="bg-white/5 border border-white/5 rounded-2xl p-5 hover:bg-white/10 transition-all cursor-pointer relative group"
+                     onclick="window.location.href='/groups/<%= group._id %>'">
+                  <div class="flex items-center space-x-5">
+                    <img src="<%= group.icon || '/group_icons/default.png' %>" 
+                         alt="<%= group.name %>" 
+                         class="w-16 h-16 rounded-2xl object-cover border border-white/10 shadow-2xl group-hover:scale-105 transition-transform">
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-bold text-white truncate text-lg"><%= group.name %></h3>
+                      <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1"><%= group.members.length %> MEMBERS</p>
+                    </div>
+                    <svg class="h-6 w-6 text-slate-600 group-hover:text-primary-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Invite Modal -->
+  <div id="inviteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-secondary-900">Invite to Community</h3>
+        <button onclick="toggleInviteModal()" class="text-secondary-400 hover:text-secondary-600">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-secondary-700 mb-2">Invite Code</label>
+          <div class="flex">
+            <input type="text" value="<%= community.inviteCode %>" readonly 
+                   class="flex-1 px-3 py-2 bg-secondary-50 border border-secondary-200 rounded-l-lg text-sm">
+            <button onclick="copyInviteCode()" class="bg-primary-500 text-white px-4 py-2 rounded-r-lg hover:bg-primary-600 transition-colors">
+              Copy
+            </button>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-secondary-700 mb-2">Or share link</label>
+          <div class="flex">
+            <input type="text" value="<%= `${req.protocol}://${req.get('host')}/communities/join/${community.inviteCode}` %>" readonly 
+                   class="flex-1 px-3 py-2 bg-secondary-50 border border-secondary-200 rounded-l-lg text-sm">
+            <button onclick="copyInviteLink()" class="bg-primary-500 text-white px-4 py-2 rounded-r-lg hover:bg-primary-600 transition-colors">
+              Copy
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleInviteModal() {
+      const modal = document.getElementById('inviteModal');
+      modal.classList.toggle('hidden');
+    }
+
+    function copyInviteCode() {
+      const codeInput = document.querySelector('input[value="<%= community.inviteCode %>"]');
+      codeInput.select();
+      document.execCommand('copy');
+      alert('Invite code copied!');
+    }
+
+    function copyInviteLink() {
+      const linkInput = document.querySelector('input[value*="/communities/join/"]');
+      linkInput.select();
+      document.execCommand('copy');
+      alert('Invite link copied!');
+    }
+  </script>
+</body>
+</html>

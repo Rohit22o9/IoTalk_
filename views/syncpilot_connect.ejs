@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncPilot Connect | ModernChat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #020617; color: #e2e8f0; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="glass rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl">
+        <div class="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <% if (success) { %>
+                <svg class="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <% } else { %>
+                <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <% } %>
+        </div>
+        
+        <h1 class="text-2xl font-bold mb-2"><%= success ? 'Connected!' : 'Connection Failed' %></h1>
+        <p class="text-slate-400 mb-8">
+            <%= success ? '✅ Device connected successfully. You can now control your desktop session.' : '❌ Invalid or expired QR code. Please generate a new one on your desktop.' %>
+        </p>
+        
+        <button onclick="window.close()" class="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all">
+            Close Window
+        </button>
+    </div>
+</body>
+</html>

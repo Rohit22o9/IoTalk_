@@ -1,0 +1,138 @@
+:root {
+  --bg-dark: #0f172a;
+  --bg-darker: #020617;
+  --accent-purple: #8b5cf6;
+  --accent-blue: #3b82f6;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --card-bg: rgba(30, 41, 59, 0.7);
+  --glass-bg: rgba(15, 23, 42, 0.8);
+}
+
+body.dark-theme {
+  background: var(--bg-darker);
+  color: var(--text-main);
+  transition: all 0.3s ease;
+}
+
+.dark-theme header, 
+.dark-theme footer {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Chat Bubbles Enhancement */
+.message-container {
+  animation: messageAppear 0.3s ease-out forwards;
+}
+
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dark-theme .own-message {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue)) !important;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+  border-radius: 1.25rem 1.25rem 0.25rem 1.25rem !important;
+}
+
+.dark-theme .other-message {
+  background: var(--card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 1.25rem 1.25rem 1.25rem 0.25rem !important;
+  color: var(--text-main) !important;
+}
+
+/* Button Styling */
+button, .btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border-radius: 0.75rem !important;
+}
+
+button:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+/* Input Box Enhancement */
+textarea, input[type="text"] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-main) !important;
+  border-radius: 1rem !important;
+  transition: all 0.3s ease !important;
+}
+
+textarea:focus, input[type="text"]:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--accent-purple) !important;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1) !important;
+  outline: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Neon Pulse Ring for Call Avatar */
+.call-avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.call-avatar-container::before {
+    content: "";
+    position: absolute;
+    inset: -10px;
+    border: 3px solid var(--accent-purple);
+    border-radius: 50%;
+    animation: neonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 0;
+}
+
+@keyframes neonPulse {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+        box-shadow: 0 0 5px var(--accent-purple), 0 0 10px var(--accent-blue);
+    }
+    100% {
+        transform: scale(1.5);
+        opacity: 0;
+        box-shadow: 0 0 20px var(--accent-purple), 0 0 40px var(--accent-blue);
+    }
+}
+
+.call-avatar-img {
+    position: relative;
+    z-index: 1;
+}

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Community | ModernChat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/ui-enhancements.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f5f3ff', 100: '#ede9fe', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9', 800: '#5b21b6', 900: '#4c1d95',
+            },
+            secondary: {
+              50: '#f8fafc', 100: '#f1f5f9', 500: '#64748b', 600: '#475569', 700: '#334155', 800: '#1e293b', 900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="min-h-screen bg-[#020617] text-slate-200">
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-0 right-0 w-96 h-96 bg-primary-900/10 rounded-full blur-3xl animate-pulse"></div>
+    <div class="absolute bottom-0 left-0 w-96 h-96 bg-blue-900/10 rounded-full blur-3xl animate-pulse animation-delay-2000"></div>
+  </div>
+
+  <div class="relative min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-[#020617]/80 backdrop-blur-xl border-b border-white/5 sticky top-0 z-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20">
+          <div class="flex items-center">
+            <form action="/dashboard" method="GET" class="mr-4">
+              <button type="submit" class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+              </button>
+            </form>
+            <h1 class="text-2xl font-bold text-white">Create Community</h1>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto w-full px-4 py-10">
+      <div class="glass rounded-3xl p-8 border border-white/5 shadow-2xl">
+        <form action="/communities/create" method="POST" enctype="multipart/form-data" class="space-y-8">
+          <!-- Community Icon -->
+          <div class="text-center">
+            <div class="flex justify-center">
+              <div class="relative group cursor-pointer">
+                <div class="absolute -inset-1 bg-gradient-to-r from-primary-500 to-blue-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <img id="iconPreview" src="/group_icons/default.png" class="relative w-32 h-32 rounded-full object-cover border-4 border-[#020617] shadow-2xl">
+                <label for="icon" class="absolute bottom-0 right-0 w-10 h-10 bg-primary-600 text-white rounded-full flex items-center justify-center border-4 border-[#020617] cursor-pointer hover:bg-primary-500 transition-colors">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                </label>
+                <input type="file" name="icon" id="icon" class="hidden" accept="image/*" onchange="previewIcon(this)">
+              </div>
+            </div>
+            <p class="mt-4 text-sm font-bold text-slate-500 uppercase tracking-widest">Community Icon</p>
+          </div>
+
+          <div class="space-y-6">
+            <div>
+              <label for="name" class="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">Community Name</label>
+              <input type="text" name="name" id="name" required
+                     class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
+                     placeholder="Enter community name">
+            </div>
+
+            <div>
+              <label for="description" class="block text-sm font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">Description</label>
+              <textarea name="description" id="description" rows="3"
+                        class="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none resize-none"
+                        placeholder="Describe your community..."></textarea>
+            </div>
+
+            <div class="space-y-4 pt-4">
+              <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest px-2">Privacy Settings</h3>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="flex items-center p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                  <input type="checkbox" name="isPrivate" id="isPrivate" class="peer hidden">
+                  <div class="w-6 h-6 rounded-lg border-2 border-white/20 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-all mr-3">
+                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium text-slate-300">Private Community</span>
+                </label>
+                
+                <label class="flex items-center p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                  <input type="checkbox" name="requireApproval" id="requireApproval" class="peer hidden">
+                  <div class="w-6 h-6 rounded-lg border-2 border-white/20 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-all mr-3">
+                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium text-slate-300">Require Approval</span>
+                </label>
+                
+                <label class="flex items-center p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                  <input type="checkbox" name="allowMemberInvites" id="allowMemberInvites" checked class="peer hidden">
+                  <div class="w-6 h-6 rounded-lg border-2 border-white/20 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-all mr-3">
+                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium text-slate-300">Allow Invites</span>
+                </label>
+                
+                <label class="flex items-center p-4 rounded-2xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-all">
+                  <input type="checkbox" name="allowGroupCreation" id="allowGroupCreation" class="peer hidden">
+                  <div class="w-6 h-6 rounded-lg border-2 border-white/20 peer-checked:bg-primary-600 peer-checked:border-primary-600 flex items-center justify-center transition-all mr-3">
+                    <svg class="w-4 h-4 text-white opacity-0 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <span class="text-sm font-medium text-slate-300">Allow Group Creation</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-6 border-t border-white/5">
+            <button type="submit" class="w-full py-5 rounded-2xl font-bold text-white bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 shadow-xl shadow-primary-900/20 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+              Create Community
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <style>
+    .glass {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+  </style>
+
+  <script>
+    function previewIcon(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('iconPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+  </script>
+</body>
+</html>

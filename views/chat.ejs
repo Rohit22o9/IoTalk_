@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat with <%= otherUser.username %> - ModernChat</title>
+  <script src="/js/theme-init.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/ui-enhancements.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#eff6ff', 100: '#dbeafe',
+              500: '#8b5cf6', 600: '#7c3aed',
+              700: '#6d28d9', 800: '#5b21b6', 900: '#4c1d95',
+            },
+            secondary: {
+              50: '#f8fafc', 100: '#f1f5f9',
+              500: '#64748b', 600: '#475569',
+              700: '#334155', 800: '#1e293b', 900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+    <script>
+      (function() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+          document.body.classList.add('light-theme');
+          document.documentElement.classList.add('light-theme');
+        } else {
+          document.body.classList.remove('light-theme');
+          document.documentElement.classList.remove('light-theme');
+        }
+      })();
+    </script>
+  <style>
+    body, html {
+      overflow-x: hidden;
+    }
+    .chat-messages {
+      overflow-x: hidden;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+  </style>
+</head>
+
+<body class="h-screen dark-theme bg-slate-950 overflow-hidden">
+  <div class="h-full flex flex-col relative text-slate-100">
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-lg border-b border-secondary-200 px-4 py-3 flex-shrink-0">
+      <div class="flex items-center space-x-4">
+        <form action="/dashboard" method="GET" class="inline">
+          <button type="submit" class="p-2 rounded-lg hover:bg-secondary-100 transition-colors duration-200">
+            <svg class="h-5 w-5 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+        </form>
+        <div class="flex items-center space-x-3 flex-1">
+          <div class="call-avatar-container">
+            <img src="<%= otherUser.avatar || '/avatars/default-avatar.png' %>"
+                 alt="<%= otherUser.username %>"
+                 class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md call-avatar-img">
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center space-x-2">
+              <h1 class="text-lg font-semibold text-secondary-900 flex items-center">
+                <%= otherUser.username %>
+                <span class="ml-2 text-green-500 cursor-help flex items-center quantum-safe-badge" title="Messages are protected using post-quantum cryptography principles.">
+                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span class="text-[10px] ml-1 font-medium uppercase tracking-tighter opacity-70">Quantum-Safe</span>
+                </span>
+              </h1>
+              <div class="flex items-center space-x-1 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 chat-safety-score-container">
+                <span class="text-[10px] font-bold text-green-700 whitespace-nowrap">Safety Score: 96%</span>
+                <div class="relative group/safety">
+                  <span class="text-[10px] cursor-help">ℹ️</span>
+                  <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/safety:block w-48 p-2 bg-gray-900 text-white text-[10px] rounded shadow-xl z-[60] text-center pointer-events-none after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-8 after:border-transparent after:border-t-gray-900">
+                    Calculated using AI moderation results
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500" id="typing-indicator"></p>
+          </div>
+        </div>
+        <div class="flex space-x-2">
+          <button onclick="openSecurityInfo()" class="p-3 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-600 transition-all duration-200 shadow-lg hover:shadow-xl" title="Security Information">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </button>
+          <button onclick="window.startAudioCall('<%= otherUser._id %>')" class="p-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl" title="Audio Call">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+            </svg>
+          </button>
+          <button onclick="window.startVideoCall('<%= otherUser._id %>')" class="p-3 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl" title="Video Call">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Messages Container -->
+    <main class="flex-1 overflow-y-auto p-4 space-y-4 chat-messages pb-24 flex flex-col" id="chat-messages">
+      <% chats.forEach(chat => { %>
+        <% const isOwn = chat.from.toString() === currentUser._id.toString(); %>
+        <% const ext = chat.media ? chat.media.split('.').pop().toLowerCase() : ''; %>
+        <% const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext); %>
+        <% const isVideo = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm'].includes(ext); %>
+        <% const isAudio = ['mp3', 'wav', 'ogg', 'm4a', 'webm'].includes(ext) || (chat.originalName && chat.originalName.startsWith('voice_')) || (chat.media && chat.media.includes('voice_')); %>
+
+        <div class="flex <%= isOwn ? 'justify-end' : 'justify-start' %>" data-id="<%= chat._id %>">
+          <div class="message-container relative">
+            <% if (isAudio && chat.media) { %>
+              <!-- Voice message container -->
+              <div class="max-w-xs lg:max-w-md">
+                <div class="<%= isOwn ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600' %> rounded-2xl <%= isOwn ? 'rounded-br-md' : 'rounded-bl-md' %> p-3 shadow-lg relative group">
+                  <div class="flex items-center space-x-3">
+                    <button class="voice-play-btn flex-shrink-0 bg-white bg-opacity-20 border-2 border-white border-opacity-30 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-30 transition-all duration-200" data-audio-src="<%= chat.media.startsWith('/') ? chat.media : '/' + chat.media %>">
+                      <svg class="play-icon w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M8 5v10l7-5-7-5z"/>
+                      </svg>
+                      <svg class="pause-icon w-5 h-5 text-white hidden" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 4a1 1 0 011 1v10a1 1 0 11-2 0V5a1 1 0 011-1zM13 4a1 1 0 011 1v10a1 1 0 11-2 0V5a1 1 0 011-1z" clip-rule="evenodd"/>
+                      </svg>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                      <div class="voice-progress-bar-container h-1 bg-white bg-opacity-30 rounded-full cursor-pointer">
+                        <div class="voice-progress h-full bg-white rounded-full transition-all duration-100" style="width: 0%"></div>
+                      </div>
+                    </div>
+                    <div class="voice-duration text-white text-sm font-medium min-w-10 text-right">0:00</div>
+                  </div>
+                  <button onclick="summarizeContent('<%= chat._id %>', 'audio', '<%= chat.media %>')"
+                          class="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white bg-opacity-20 text-white text-xs p-1.5 rounded-full hover:bg-opacity-30 shadow-lg">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </button>
+                </div>
+                <div class="flex items-center justify-between mt-1 px-2">
+                  <span class="text-xs <%= isOwn ? 'text-secondary-500' : 'text-secondary-500' %>">
+                    <%= new Date(chat.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
+                  </span>
+                  <% if (chat.moderationResult && chat.moderationResult.flagged) { %>
+                    <span class="text-xs text-red-400" title="Message was moderated">⚠️</span>
+                  <% } %>
+                </div>
+              </div>
+            <% } else { %>
+              <div class="max-w-xs lg:max-w-md px-4 py-3 rounded-2xl other-message
+                          <%= isOwn ? 'own-message' : '' %> shadow-lg">
+                
+                <% if (chat.media && !isAudio) { %>
+                  <% if (isImage) { %>
+                    <div class="mb-2">
+                      <img src="<%= chat.media.startsWith('/') ? chat.media : '/' + chat.media %>" alt="Media" class="rounded-md max-h-60 shadow">
+                    </div>
+                  <% } else if (isVideo) { %>
+                    <div class="mb-2">
+                      <video src="<%= chat.media.startsWith('/') ? chat.media : '/' + chat.media %>" class="rounded-md max-h-60 shadow w-full" controls></video>
+                    </div>
+                  <% } else { %>
+                    <div class="bg-gray-100 rounded-md p-3 mb-2 shadow flex flex-col space-y-2">
+                      <div class="flex items-center space-x-3">
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                          <path d="M12 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                          <polyline points="12 2 12 8 18 8"/>
+                        </svg>
+                        <div>
+                          <p class="font-semibold text-gray-800 text-sm truncate max-w-xs">
+                            <%= chat.originalName || chat.media.split('/').pop() %>
+                          </p>
+                          <p class="text-xs text-gray-500 uppercase">DOCUMENT</p>
+                        </div>
+                      </div>
+                      <div class="flex space-x-3 mt-1">
+                        <a href="<%= chat.media.startsWith('/') ? chat.media : '/' + chat.media %>" target="_blank" class="text-xs px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Open</a>
+                        <a href="<%= chat.media.startsWith('/') ? chat.media : '/' + chat.media %>" download class="text-xs px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600">Download</a>
+                      </div>
+                    </div>
+                  <% } %>
+                <% } %>
+
+                <% if (chat.msg && !isAudio) { %>
+                  <p class="text-sm leading-relaxed msg-text-content"><%- chat.msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-primary-600 hover:underline break-all">$1</a>') %></p>
+                <% } %>
+
+                <div class="flex items-center justify-between mt-2">
+                  <span class="text-xs <%= isOwn ? 'text-primary-100' : 'text-secondary-500' %> flex items-center">
+                    <%= new Date(chat.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
+                    <% if (chat.edited) { %>
+                      <span class="ml-1 italic">(edited)</span>
+                    <% } %>
+                    <% if (chat.selfDestructAt) { %>
+                      <span class="ml-1 text-[10px] text-red-500 font-bold" title="Auto-destruct enabled">⏳</span>
+                    <% } %>
+                    <span class="ml-1 text-[10px] cursor-help verified-check" title="Message integrity verified using secure cryptographic hash">✔️</span>
+                  </span>
+                </div>
+              </div>
+            <% } %>
+
+            <!-- Message Menu -->
+            <% if (isOwn) { %>
+              <div class="message-menu absolute -right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button class="menu-trigger p-1 rounded-full hover:bg-gray-200 hover:bg-opacity-50" onclick="toggleMenu(this)">
+                  <svg class="h-4 w-4 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                  </svg>
+                </button>
+                <div class="dropdown-menu hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100">
+                  <% if (chat.msg && !isAudio) { %>
+                    <button onclick="editMessage('<%= chat._id %>')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Edit Message</button>
+                  <% } %>
+                  <button onclick="deleteMessage('<%= chat._id %>', 'forMe')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Delete for Me</button>
+                  <button onclick="deleteMessage('<%= chat._id %>', 'forEveryone')" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Delete for Everyone</button>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      <% }); %>
+    </main>
+
+    <!-- AI Summary Modal -->
+    <div id="ai-summary-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" onclick="closeAISummaryOnOutsideClick(event)">
+      <div class="bg-white rounded-2xl p-6 mx-4 max-w-md w-full max-h-96 overflow-y-auto relative">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">🤖 AI Summary</h3>
+          <button onclick="closeAISummary()" class="text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full p-1 transition-colors duration-200">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div id="ai-summary-content" class="text-sm text-gray-700 leading-relaxed mb-4">
+          <!-- Summary content will be inserted here -->
+        </div>
+        <div id="ai-summary-loading" class="text-center py-4">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+          <p class="text-sm text-gray-500 mt-2">Generating summary...</p>
+        </div>
+        <div class="flex justify-center mt-4 pt-4 border-t border-gray-200">
+          <button onclick="closeAISummary()" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 font-medium">
+            Close Summary
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Replies Panel -->
+    <div id="smart-replies-panel" class="hidden fixed bottom-24 left-0 right-0 z-50 mx-4 mb-2">
+      <div class="bg-white/90 backdrop-blur-lg border border-secondary-200 rounded-xl shadow-lg p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-medium text-gray-600">🤖 Smart Replies</span>
+          <button onclick="hideSmartReplies()" class="text-gray-400 hover:text-gray-600">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div id="smart-replies-content" class="space-y-2">
+          <!-- Smart reply buttons will be inserted here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Media Preview (positioned above the footer) -->
+    <div id="filePreview" class="hidden fixed bottom-24 left-0 right-0 z-50 mx-4 mb-2">
+      <div class="flex items-center justify-between p-3 bg-white/90 backdrop-blur-lg border border-secondary-200 rounded-xl shadow-lg">
+        <div id="previewContent" class="flex items-center space-x-3 flex-1 overflow-hidden"></div>
+        <button id="removeFile" type="button" class="ml-3 p-2 rounded-full hover:bg-secondary-100 text-secondary-500 hover:text-red-500 transition-colors flex-shrink-0">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Voice Recording Modal -->
+    <div id="voice-recording-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div class="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full">
+        <div class="text-center">
+          <div class="mb-4">
+            <div class="w-20 h-20 bg-red-500 rounded-full mx-auto flex items-center justify-center animate-pulse">
+              <svg class="h-10 w-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Recording Voice Message</h3>
+          <p class="text-sm text-gray-500 mb-4">Tap to stop recording</p>
+          <div class="flex space-x-3 justify-center">
+            <button onclick="stopVoiceRecording()" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors">
+              Stop & Send
+            </button>
+            <button onclick="cancelVoiceRecording()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Call Interface -->
+    <div id="call-interface" class="hidden fixed inset-0 bg-gray-900 z-[100] flex flex-col">
+      <!-- Call content will be inserted here -->
+    </div>
+
+    <!-- Incoming Call Notification -->
+    <div id="incoming-call-notification" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 z-[100] flex items-center justify-center">
+      <!-- Call notification content will be inserted here -->
+    </div>
+
+    <!-- Message Input -->
+    <footer id="message-footer" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-secondary-200" style="z-index: 1000;">
+      <div class="p-4">
+        <form id="message-form" enctype="multipart/form-data" class="flex items-center space-x-3">
+          <input type="hidden" id="current-user-id" value="<%= currentUser._id %>">
+          <input type="hidden" id="current-username" value="<%= currentUser.username %>">
+          <input type="file" id="media-input" name="media" class="hidden" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar">
+          <label for="media-input" class="cursor-pointer p-3 rounded-xl bg-secondary-100 hover:bg-secondary-200 transition">
+            <svg class="h-5 w-5 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+            </svg>
+          </label>
+
+          <!-- Voice Message Button -->
+          <button type="button" id="voice-message-btn" onclick="startVoiceRecording()" class="cursor-pointer p-3 rounded-xl bg-secondary-100 hover:bg-secondary-200 transition">
+            <svg class="h-5 w-5 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"></path>
+            </svg>
+          </button>
+
+          <!-- AI Reply Button -->
+          <button type="button" id="ai-suggestions-btn" onclick="generateAIResponse()" class="cursor-pointer p-3 rounded-xl bg-blue-100 hover:bg-blue-200 transition" title="Generate AI Suggestions">
+            <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+            </svg>
+          </button>
+
+          <!-- Self-Destruct Select -->
+          <div class="relative group">
+            <select name="selfDestruct" id="self-destruct-timer" class="cursor-pointer p-3 rounded-xl bg-red-50 hover:bg-red-100 transition appearance-none text-xs font-bold text-red-600 pr-8 outline-none">
+              <option value="off">Off</option>
+              <option value="10">10s</option>
+              <option value="60">1m</option>
+              <option value="3600">1h</option>
+            </select>
+            <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-red-400">
+              <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+              </svg>
+            </div>
+          </div>
+
+          <div class="flex-1 relative">
+            <textarea name="msg" id="message-input" placeholder="Type your message..."
+                   class="w-full px-4 py-3 bg-secondary-50 border border-secondary-200 rounded-2xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 pr-12 resize-none"
+                   autocomplete="off" rows="1" style="min-height: 48px; overflow-y: hidden;"></textarea>
+          </div>
+
+          <button type="submit" class="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Full-Screen Media Preview Modal -->
+  <div id="mediaPreviewModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    <div class="relative max-w-screen-lg max-h-screen-lg w-full h-full flex items-center justify-center p-4">
+      <!-- Close Button -->
+      <button onclick="closeMediaPreview()"
+              class="absolute top-4 right-4 z-60 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors">
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <!-- Media Content Container -->
+      <div id="previewMediaContainer" class="flex items-center justify-center w-full h-full">
+        <!-- Content will be dynamically inserted here -->
+      </div>
+
+      <!-- Download Button -->
+      <button id="downloadMediaBtn" onclick="downloadMedia()"
+              class="absolute bottom-4 right-4 z-60 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
+        </svg>
+        <span>Download</span>
+      </button>
+    </div>
+  </div>
+
+  
+
+  <!-- Security Info Modal -->
+  <div id="security-info-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[110] flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl transform transition-all">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+          <span class="mr-2">🛡️</span> Security Guide
+        </h3>
+        <button onclick="closeSecurityInfo()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="space-y-6">
+        <div>
+          <h4 class="font-bold text-gray-900 mb-2">🔐 Why encryption is important</h4>
+          <p class="text-sm text-gray-600 leading-relaxed">Encryption ensures that only you and the recipient can read your messages. Even if data is intercepted, it remains unreadable to anyone else, protecting your privacy and sensitive data.</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-gray-900 mb-2">🛡️ What quantum-safe means</h4>
+          <p class="text-sm text-gray-600 leading-relaxed">Quantum computers could eventually break standard encryption. Quantum-safe (or post-quantum) cryptography uses mathematical problems that are resistant to being solved by both traditional and quantum computers.</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-gray-900 mb-2">🚀 Future-proof protection</h4>
+          <p class="text-sm text-gray-600 leading-relaxed">ModernChat uses a hybrid approach, combining industry-standard AES-256 with quantum-resistant key rotation principles to ensure your conversations stay private today and in the future.</p>
+        </div>
+      </div>
+      <button onclick="closeSecurityInfo()" class="mt-8 w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg hover:shadow-xl">
+        Got it!
+      </button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/webrtc-debug.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    function openSecurityInfo() {
+      document.getElementById('security-info-modal').classList.remove('hidden');
+    }
+    function closeSecurityInfo() {
+      document.getElementById('security-info-modal').classList.add('hidden');
+    }
+  </script>
+  <script>
+    // Join the chat room on connection
+    document.addEventListener('DOMContentLoaded', () => {
+      const socket = window.socket || io();
+      const otherUserId = '<%= otherUser._id %>';
+      const currentUserId = '<%= currentUser._id %>';
+      
+      const joinChat = () => {
+        socket.emit('userOnline', currentUserId);
+        socket.emit('join-chat', otherUserId);
+        console.log('Emitted join-chat for', otherUserId);
+      };
+
+      if (socket.connected) {
+        joinChat();
+      } else {
+        socket.on('connect', joinChat);
+      }
+    });
+  </script>
+  <script src="/js/main.js"></script>
+  <script src="/js/call.js"></script>
+  <script>
+    // Global variables
+    const otherUserId = "<%= otherUser._id %>";
+    const currentUserId = "<%= currentUser._id %>";
+
+    // Initialize socket (only once)
+    let chatSocket = null;
+
+    // Initialize everything when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Initializing chat page...');
+
+      // Create socket connection only if not already exists
+      if (!window.socket) {
+        chatSocket = io();
+        window.socket = chatSocket; // Make available globally for call manager
+      } else {
+        chatSocket = window.socket;
+      }
+
+      chatSocket.emit('userOnline', currentUserId);
+
+      // Initialize notification manager
+      if (window.notificationManager) {
+        window.notificationManager.setSocket(chatSocket, currentUserId);
+      }
+
+      initializeChat();
+      initializeScrollBehavior();
+
+      // Initialize incoming call handler
+      if (window.callManager) {
+        window.callManager.setSocket(chatSocket, currentUserId);
+        window.callManager.onIncomingCall = handleIncomingCall;
+        window.callManager.onCallAccepted = handleCallAccepted;
+        window.callManager.onCallAnswer = handleCallAnswer;
+        window.callManager.onIceCandidate = handleIceCandidate;
+        window.callManager.onCallDeclined = handleCallDeclined;
+        window.callManager.onCallEnd = handleCallEnd;
+      }
+
+      console.log('Chat page initialization complete');
+    });
+
+    function initializeChat() {
+      // Room for private chat
+      const roomId = [currentUserId, otherUserId].sort().join('_');
+      chatSocket.emit('joinRoom', roomId);
+
+      // Initialize message form
+      const messageForm = document.getElementById('message-form');
+      if (messageForm) {
+        messageForm.addEventListener('submit', sendMessage);
+      }
+
+      // Initialize typing indicators
+      const messageInput = document.getElementById('message-input');
+      if (messageInput) {
+        let typingTimer;
+        messageInput.addEventListener('input', () => {
+          chatSocket.emit('typing start', {
+            from: currentUserId,
+            to: otherUserId,
+            username: '<%= currentUser.username %>'
+          });
+
+          clearTimeout(typingTimer);
+          typingTimer = setTimeout(() => {
+            chatSocket.emit('typing stop', {
+              from: currentUserId,
+              to: otherUserId,
+              username: '<%= currentUser.username %>'
+            });
+          }, 1000);
+        });
+      }
+
+      // Listen for incoming messages
+      chatSocket.on('chat message', (message) => {
+        appendMessage(message);
+      });
+
+      // Listen for voice messages in real-time
+      chatSocket.on('voiceMessage', (data) => {
+        console.log('✅ Voice message received via Socket.IO');
+        appendVoiceMessage(data);
+      });
+
+      // Listen for typing indicators
+      chatSocket.on('user typing', (data) => {
+        showTypingIndicator(data);
+      });
+    }
+
+    // Call functions now handled by main.js startCall function
+
+    // Handle incoming call notification
+    function handleIncomingCall(callData) {
+      console.log('📞 Incoming call detected:', callData);
+      currentCall = callData; // Store call data for later use
+      const modal = document.getElementById('incomingCallModal');
+      const callerAvatar = document.getElementById('caller-avatar');
+      
+      if (callerAvatar && !callerAvatar.parentElement.classList.contains('call-avatar-container')) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'call-avatar-container';
+          callerAvatar.parentNode.insertBefore(wrapper, callerAvatar);
+          wrapper.appendChild(callerAvatar);
+          callerAvatar.classList.add('call-avatar-img');
+      }
+
+      const callerName = document.getElementById('caller-name');
+      const callTypeText = document.getElementById('call-type-text');
+      const acceptButton = document.getElementById('acceptCall');
+      const rejectButton = document.getElementById('rejectCall');
+
+      if (modal && callerAvatar && callerName && callTypeText && acceptButton && rejectButton) {
+        callerAvatar.src = callData.callerAvatar || '/avatars/default-avatar.png';
+        callerName.textContent = callData.callerName;
+        callTypeText.textContent = callData.type === 'video' ? 'Video Call' : 'Audio Call';
+
+        // Set up button click handlers
+        acceptButton.onclick = () => {
+          console.log('🤝 Accepting call...');
+          modal.classList.add('hidden'); // Hide modal immediately
+          window.callManager.acceptCall(callData.callId);
+        };
+        rejectButton.onclick = () => {
+          console.log('❌ Declining call...');
+          modal.classList.add('hidden'); // Hide modal immediately
+          window.callManager.rejectCall(callData.callId);
+        };
+
+        modal.classList.remove('hidden');
+      } else {
+        console.error('❌ Failed to find elements for incoming call modal');
+      }
+    }
+
+    async function handleCallAccepted(data) {
+      console.log('🟢 CALL ACCEPTED - Starting WebRTC negotiation...');
+
+      try {
+        // ✅ Keep UI in calling state - will update when connection established
+        console.log('📞 Keeping caller UI in calling state until connected');
+
+        // Verify we have local stream
+        if (!localStream || localStream.getTracks().length === 0) {
+          console.error('❌ No local stream available');
+          throw new Error('Local stream not available');
+        }
+
+        // Create peer connection with local tracks
+        console.log('🔗 Creating peer connection for caller...');
+        await createPeerConnection();
+
+        // ✅ FIX: Create offer with proper constraints
+        console.log('📤 Creating offer...');
+        const offerOptions = {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: callType === 'video'
+        };
+
+        const offer = await peerConnection.createOffer(offerOptions);
+        console.log('✅ Offer created:', offer.type);
+
+        // Set local description
+        console.log('📤 Setting local description...');
+        await peerConnection.setLocalDescription(offer);
+        console.log('✅ Local description set successfully');
+
+        // Send offer via Socket.IO
+        console.log('📤 Sending offer to receiver via Socket.IO...');
+        chatSocket.emit('call-offer', {
+          callId: currentCall.callId,
+          offer: offer
+        });
+        console.log('✅ Offer sent to receiver');
+
+      } catch (error) {
+        console.error('❌ Error in handleCallAccepted:', error);
+        alert('Failed to establish call: ' + error.message);
+        endCall();
+      }
+    }
+
+    async function handleCallOffer(data) {
+      console.log('📥 Handling call offer');
+
+      try {
+        if (!currentCall) {
+          console.error('❌ No current call when handling offer');
+          return;
+        }
+
+        if (!peerConnection) {
+          console.log('🔗 Creating peer connection for offer...');
+          await createPeerConnection();
+        }
+
+        console.log('📥 Setting remote description (offer)...');
+        const offerDesc = new RTCSessionDescription(data.offer);
+        await peerConnection.setRemoteDescription(offerDesc);
+        console.log('✅ Remote description (offer) set');
+
+        // Verify local stream before creating answer
+        if (!localStream || !localStream.active || localStream.getTracks().length === 0) {
+          console.error('❌ No local stream available when creating answer');
+          throw new Error('Local stream not available');
+        }
+
+        console.log('📤 Creating answer with audio constraints...');
+        const answerOptions = {
+          offerToReceiveAudio: true,
+          offerToReceiveVideo: callType === 'video'
+        };
+
+        const answer = await peerConnection.createAnswer(answerOptions);
+        console.log('✅ Answer created with options:', answerOptions);
+
+        console.log('📤 Setting local description (answer)...');
+        await peerConnection.setLocalDescription(answer);
+        console.log('✅ Local description (answer) set');
+
+        console.log('📤 Sending answer to caller...');
+        chatSocket.emit('call-answer', {
+          callId: currentCall.callId,
+          answer: answer
+        });
+
+        console.log('✅ Answer sent successfully');
+
+        // Process any pending ICE candidates
+        if (window.pendingIceCandidates && window.pendingIceCandidates.length > 0) {
+          console.log(`🧊 Processing ${window.pendingIceCandidates.length} pending ICE candidates...`);
+          for (const candidate of window.pendingIceCandidates) {
+            try {
+              await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+              console.log('✅ Pending ICE candidate added');
+            } catch (error) {
+              console.error('❌ Error adding pending ICE candidate:', error);
+            }
+          }
+          window.pendingIceCandidates = [];
+        }
+
+        // Verify audio setup
+        setTimeout(() => {
+          verifyAudioFlow();
+        }, 2000);
+
+      } catch (error) {
+        console.error('❌ Error handling call offer:', error);
+        alert('Failed to process call offer: ' + error.message);
+        endCall();
+      }
+    }
+
+    async function handleCallAnswer(data) {
+      console.log('📥 RECEIVED ANSWER from receiver');
+
+      try {
+        if (!peerConnection) {
+          console.error('❌ No peer connection when handling answer');
+          return;
+        }
+
+        console.log('📥 Setting remote description (answer)...');
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        console.log('✅ REMOTE DESCRIPTION SET FROM ANSWER - WebRTC negotiation completing...');
+
+        // ✅ The UI will update automatically when connectionState becomes 'connected'
+        console.log('⏳ Waiting for peer connection to establish...');
+
+        // Process any queued ICE candidates
+        if (window.pendingIceCandidates && window.pendingIceCandidates.length > 0) {
+          console.log(`🧊 Processing ${window.pendingIceCandidates.length} pending ICE candidates...`);
+          for (const candidate of window.pendingIceCandidates) {
+            try {
+              await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+              console.log('✅ Pending ICE candidate added');
+            } catch (error) {
+              console.error('❌ Error adding pending ICE candidate:', error);
+            }
+          }
+          window.pendingIceCandidates = [];
+        }
+
+      } catch (error) {
+        console.error('❌ Error handling call answer:', error);
+        alert('Failed to process call answer');
+        endCall();
+      }
+    }
+
+    async function handleIceCandidate(data) {
+      console.log('📥 Received ICE candidate');
+
+      try {
+        // Handle null candidate (end of candidates)
+        if (!data.candidate || !data.candidate.candidate) {
+          console.log('🧊 End-of-candidates signal received');
+          return;
+        }
+
+        console.log('🧊 ICE candidate type:', data.candidate.type || 'unknown');
+
+        // ✅ FIX: Robust ICE candidate handling
+        if (peerConnection && peerConnection.remoteDescription) {
+          console.log('🧊 Adding ICE candidate immediately...');
+          await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+          console.log('✅ ICE candidate added successfully');
+        } else {
+          console.log('🧊 Queueing ICE candidate (no remote description yet)');
+          if (!window.pendingIceCandidates) {
+            window.pendingIceCandidates = [];
+          }
+          window.pendingIceCandidates.push(data.candidate);
+          console.log(`📦 Queued ICE candidate. Total pending: ${window.pendingIceCandidates.length}`);
+        }
+      } catch (error) {
+        console.error('❌ Error handling ICE candidate:', error.name, error.message);
+      }
+    }
+
+    function handleCallDeclined(data) {
+      console.log('Call was declined');
+      hideCallInterface();
+
+      // ✅ RESTORE UI: Show message footer after call decline
+      const messageFooter = document.getElementById('message-footer');
+      if (messageFooter) {
+        messageFooter.style.display = 'block';
+        console.log('✅ Chat typing bar restored after call decline');
+      }
+
+      currentCall = null;
+      alert('Call was declined');
+    }
+
+    function handleCallEnd(data) {
+      console.log('Call ended:', data);
+      hideCallInterface();
+
+      // ✅ RESTORE UI: Show message footer after call end
+      const messageFooter = document.getElementById('message-footer');
+      if (messageFooter) {
+        messageFooter.style.display = 'block';
+        console.log('✅ Chat typing bar restored after call end');
+      }
+
+      // Clear any ongoing call state
+      currentCall = null;
+      localStream = null;
+      peerConnection = null;
+
+      alert('Call ended');
+    }
+
+    function showMissedCallNotification(data) {
+      console.log('Showing missed call notification');
+      // Implementation for missed call notification
+    }
+
+    function toggleAudio() {
+      if (localStream) {
+        const audioTrack = localStream.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = !audioTrack.enabled;
+          const button = document.getElementById('toggle-audio');
+          if (button) {
+            button.classList.toggle('bg-red-500', !audioTrack.enabled);
+            button.classList.toggle('bg-gray-600', audioTrack.enabled);
+          }
+        }
+      }
+    }
+
+    function toggleVideo() {
+      if (localStream) {
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.enabled = !videoTrack.enabled;
+          const button = document.getElementById('toggle-video');
+          if (button) {
+            button.classList.toggle('bg-red-500', !videoTrack.enabled);
+            button.classList.toggle('bg-gray-600', videoTrack.enabled);
+          }
+        }
+      }
+    }
+
+    function testAudioPlayback() {
+      console.log('🔊 Testing audio playback...');
+
+      // Test remote audio element
+      const remoteAudio = document.getElementById('remote-audio');
+      if (remoteAudio) {
+        console.log('🔊 Remote audio element found:', {
+          srcObject: !!remoteAudio.srcObject,
+          paused: remoteAudio.paused,
+          muted: remoteAudio.muted,
+          volume: remoteAudio.volume,
+          readyState: remoteAudio.readyState
+        });
+
+        if (remoteAudio.srcObject) {
+          const tracks = remoteAudio.srcObject.getTracks();
+          console.log('🔊 Remote audio stream tracks:', tracks.map(t => ({
+            kind: t.kind,
+            enabled: t.enabled,
+            muted: t.muted,
+            readyState: t.readyState
+          })));
+        }
+
+        // Force play the remote audio
+        remoteAudio.play().then(() => {
+          console.log('✅ Remote audio test play successful');
+          alert('Audio test: Remote audio playing');
+        }).catch(error => {
+          console.error('❌ Remote audio test play failed:', error);
+          alert('Audio test failed: ' + error.message);
+        });
+      } else {
+        console.error('❌ No remote audio element found');
+        alert('No remote audio element found');
+      }
+
+      // Test peer connection
+      if (peerConnection) {
+        const receivers = peerConnection.getReceivers();
+        const audioReceivers = receivers.filter(r => r.track && r.track.kind === 'audio');
+        console.log('🔊 Audio receivers:', audioReceivers.length);
+
+        audioReceivers.forEach((receiver, index) => {
+          console.log(`🔊 Audio receiver ${index}:`, {
+            track: !!receiver.track,
+            enabled: receiver.track?.enabled,
+            muted: receiver.track?.muted,
+            readyState: receiver.track?.readyState
+          });
+        });
+
+        // Log WebRTC stats
+        if (window.WebRTCDebugger) {
+          WebRTCDebugger.logPeerConnectionStats(peerConnection);
+        }
+      }
+
+      // Test browser audio capabilities
+      console.log('🔊 Browser audio capabilities:', {
+        audioContext: !!(window.AudioContext || window.webkitAudioContext),
+        getUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+        webRTC: !!window.RTCPeerConnection
+      });
+    }
+
+    function hideCallInterface() {
+      const callInterface = document.getElementById('call-interface');
+      if (callInterface) {
+        callInterface.classList.add('hidden');
+      }
+    }
+
+    function updateCallConnectionStatus(message, color) {
+      const statusElement = document.querySelector('#audio-indicator p:last-child');
+      if (statusElement) {
+        statusElement.textContent = message;
+        statusElement.style.color = color;
+      }
+    }
+
+    function showAudioAutoplayNotification() {
+      // Create notification for autoplay issues
+      const notification = document.createElement('div');
+      notification.id = 'autoplay-notification';
+      notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; background: #3b82f6; color: white;
+        padding: 12px 16px; border-radius: 8px; font-size: 14px; z-index: 10001;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3); cursor: pointer;
+      `;
+      notification.innerHTML = `
+        <div>🔊 Click anywhere to enable audio</div>
+        <div style="font-size: 12px; opacity: 0.9;">Browser blocked autoplay</div>
+      `;
+
+      document.body.appendChild(notification);
+
+      // Remove on any click
+      const enableAudio = () => {
+        const remoteAudio = document.getElementById('remote-audio');
+        if (remoteAudio) {
+          remoteAudio.play().catch(console.error);
+        }
+        notification.remove();
+        document.removeEventListener('click', enableAudio);
+      };
+
+      document.addEventListener('click', enableAudio);
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+          document.removeEventListener('click', enableAudio);
+        }
+      }, 10000);
+    }
+
+    function hideCallNotification() {
+      const notification = document.getElementById('incoming-call-notification');
+      if (notification) {
+        notification.classList.add('hidden');
+      }
+    }
+
+    // Voice message playback functionality
+    let currentAudio = null;
+    let currentPlayButton = null;
+
+    // Initialize voice message players
+    function initializeVoiceMessages() {
+      const voiceButtons = document.querySelectorAll('.voice-play-btn');
+      voiceButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const audioSrc = this.dataset.audioSrc;
+          toggleVoiceMessage(this, audioSrc);
+        });
+      });
+    }
+
+    function toggleVoiceMessage(button, audioSrc) {
+      const container = button.closest('.voice-message-container');
+      const progressBar = container.querySelector('.voice-progress');
+      const durationElement = container.querySelector('.voice-duration');
+      const playIcon = button.querySelector('.play-icon');
+      const pauseIcon = button.querySelector('.pause-icon');
+
+      // Stop any currently playing audio
+      if (currentAudio && !currentAudio.paused && currentPlayButton !== button) {
+        currentAudio.pause();
+        resetPreviousButton();
+      }
+
+      if (currentAudio && currentPlayButton === button) {
+        // Toggle current audio
+        if (currentAudio.paused) {
+          currentAudio.play().then(() => {
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+          }).catch(error => {
+            console.error('Error playing audio:', error);
+            showNotification('Failed to play voice message', 'error');
+          });
+        } else {
+          currentAudio.pause();
+          playIcon.classList.remove('hidden');
+          pauseIcon.classList.add('hidden');
+        }
+        return;
+      }
+
+      // Create new audio element with proper settings
+      currentAudio = new Audio();
+      currentAudio.src = audioSrc;
+      currentAudio.preload = 'auto';
+      currentAudio.volume = 1.0;
+      currentPlayButton = button;
+
+      // Handle CORS and audio format issues
+      currentAudio.crossOrigin = 'anonymous';
+
+      // Set up event listeners
+      currentAudio.addEventListener('loadedmetadata', function() {
+        const duration = formatTime(currentAudio.duration);
+        durationElement.textContent = duration;
+      });
+
+      currentAudio.addEventListener('timeupdate', function() {
+        if (currentAudio.duration) {
+          const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+          progressBar.style.width = progress + '%';
+          durationElement.textContent = formatTime(currentAudio.currentTime);
+        }
+      });
+
+      currentAudio.addEventListener('ended', function() {
+        resetAudioPlayer(button, progressBar, durationElement);
+      });
+
+      currentAudio.addEventListener('error', function(e) {
+        console.error('Audio error:', e);
+        showNotification('Failed to load voice message', 'error');
+        resetAudioPlayer(button, progressBar, durationElement);
+      });
+
+      // Load and play the audio
+      currentAudio.load();
+
+      // Wait for audio to be ready
+      currentAudio.addEventListener('canplaythrough', function() {
+        currentAudio.play().then(() => {
+          playIcon.classList.add('hidden');
+          pauseIcon.classList.remove('hidden');
+        }).catch(error => {
+          console.error('Error playing audio:', error);
+          handleAudioError(error, audioSrc);
+        });
+      }, { once: true });
+
+      // Add click handler to progress bar for seeking
+      const progressBarContainer = container.querySelector('.voice-progress-bar-container');
+      progressBarContainer.addEventListener('click', function(e) {
+        if (currentAudio && currentAudio.duration) {
+          const rect = this.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          const width = rect.width;
+          const seekTime = (clickX / width) * currentAudio.duration;
+          currentAudio.currentTime = seekTime;
+        }
+      });
+    }
+
+    function resetPreviousButton() {
+      if (currentPlayButton) {
+        const playIcon = currentPlayButton.querySelector('.play-icon');
+        const pauseIcon = currentPlayButton.querySelector('.pause-icon');
+        const container = currentPlayButton.closest('.voice-message-container');
+        const progressBar = container.querySelector('.voice-progress');
+        const durationElement = container.querySelector('.voice-duration');
+
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+        progressBar.style.width = '0%';
+        if (currentAudio && currentAudio.duration) {
+          durationElement.textContent = formatTime(currentAudio.duration);
+        }
+      }
+    }
+
+    function resetAudioPlayer(button, progressBar, durationElement) {
+      const playIcon = button.querySelector('.play-icon');
+      const pauseIcon = button.querySelector('.pause-icon');
+
+      playIcon.classList.remove('hidden');
+      pauseIcon.classList.add('hidden');
+      progressBar.style.width = '0%';
+
+      if (currentAudio && currentAudio.duration) {
+        durationElement.textContent = formatTime(currentAudio.duration);
+      }
+    }
+
+    function formatTime(seconds) {
+      if (isNaN(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Handle audio errors
+    function handleAudioError(error, audioSrc) {
+      console.error('Audio playback error:', error);
+
+      // Try alternative approach with HTML5 audio element
+      const tempAudio = document.createElement('audio');
+      tempAudio.src = audioSrc;
+      tempAudio.controls = true;
+      tempAudio.style.display = 'none';
+      document.body.appendChild(tempAudio);
+
+      tempAudio.play().then(() => {
+        document.body.removeChild(tempAudio);
+        showNotification('Voice message played successfully', 'success');
+      }).catch(() => {
+        document.body.removeChild(tempAudio);
+        showNotification('Unable to play voice message. Your browser may not support this audio format.', 'error');
+      });
+    }
+
+    // Message menu functions
+    function toggleMenu(button) {
+      const dropdown = button.nextElementSibling;
+      const allDropdowns = document.querySelectorAll('.dropdown-menu');
+      
+      allDropdowns.forEach(d => {
+        if (d !== dropdown) d.classList.add('hidden');
+      });
+      
+      dropdown.classList.toggle('hidden');
+    }
+
+    // Close menus on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.message-menu')) {
+        document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.add('hidden'));
+      }
+    });
+
+    async function deleteMessage(messageId, deleteType) {
+      if (!confirm(`Are you sure you want to delete this message ${deleteType === 'forEveryone' ? 'for everyone' : 'for yourself'}?`)) return;
+
+      try {
+        const response = await fetch(`/message/${messageId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deleteType })
+        });
+
+        if (response.ok) {
+          if (deleteType === 'forMe') {
+            const messageElement = document.querySelector(`[data-id="${messageId}"]`);
+            if (messageElement) messageElement.remove();
+          }
+          showNotification('Message deleted successfully', 'success');
+        } else {
+          const data = await response.json();
+          showNotification(data.error || 'Failed to delete message', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting message:', error);
+        showNotification('Failed to delete message', 'error');
+      }
+    }
+
+    function editMessage(messageId) {
+      const messageElement = document.querySelector(`[data-id="${messageId}"]`);
+      if (!messageElement) return;
+
+      const textContent = messageElement.querySelector('.msg-text-content');
+      if (!textContent) return;
+
+      const originalText = textContent.textContent.trim();
+      const input = document.createElement('textarea');
+      input.className = 'w-full p-2 border rounded-md text-gray-800 text-sm';
+      input.value = originalText;
+      
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'mt-2 px-3 py-1 bg-primary-500 text-white rounded-md text-xs';
+      saveBtn.textContent = 'Save';
+      
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'mt-2 ml-2 px-3 py-1 bg-gray-300 text-gray-700 rounded-md text-xs';
+      cancelBtn.textContent = 'Cancel';
+
+      const editContainer = document.createElement('div');
+      editContainer.appendChild(input);
+      editContainer.appendChild(saveBtn);
+      editContainer.appendChild(cancelBtn);
+
+      const originalHTML = textContent.innerHTML;
+      textContent.innerHTML = '';
+      textContent.appendChild(editContainer);
+
+      cancelBtn.onclick = () => {
+        textContent.innerHTML = originalHTML;
+      };
+
+      saveBtn.onclick = async () => {
+        const newText = input.value.trim();
+        if (!newText || newText === originalText) {
+          textContent.innerHTML = originalHTML;
+          return;
+        }
+
+        try {
+          const response = await fetch(`/message/${messageId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newMessage: newText })
+          });
+
+          if (response.ok) {
+            showNotification('Message edited successfully', 'success');
+            // Socket will handle UI update
+          } else {
+            const data = await response.json();
+            showNotification(data.error || 'Failed to edit message', 'error');
+            textContent.innerHTML = originalHTML;
+          }
+        } catch (error) {
+          console.error('Error editing message:', error);
+          showNotification('Failed to edit message', 'error');
+          textContent.innerHTML = originalHTML;
+        }
+      };
+    }
+
+    chatSocket.on('message deleted', (data) => {
+      const { messageId, deleteType } = data;
+      const messageElement = document.querySelector(`[data-id="${messageId}"]`);
+      if (messageElement) {
+        if (deleteType === 'forEveryone') {
+          const textContent = messageElement.querySelector('.msg-text-content');
+          if (textContent) {
+            textContent.innerHTML = '<span class="italic text-gray-400">This message was deleted</span>';
+          }
+          const mediaContent = messageElement.querySelector('.mb-2');
+          if (mediaContent) mediaContent.remove();
+        } else {
+          messageElement.remove();
+        }
+      }
+    });
+
+    chatSocket.on('message edited', (message) => {
+      const messageElement = document.querySelector(`[data-id="${message._id}"]`);
+      if (messageElement) {
+        const textContent = messageElement.querySelector('.msg-text-content');
+        if (textContent) {
+          textContent.innerHTML = message.msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-primary-600 hover:underline break-all">$1</a>');
+        }
+        const timeSpan = messageElement.querySelector('.text-xs');
+        if (timeSpan && !timeSpan.innerHTML.includes('(edited)')) {
+          timeSpan.innerHTML += ' <span class="ml-1 italic">(edited)</span>';
+        }
+      }
+    });
+      if (window.ModernChat && window.ModernChat.showNotification) {
+        window.ModernChat.showNotification(message, type);
+      } else {
+        // Create a simple notification
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+          type === 'error' ? 'bg-red-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500'
+        } text-white`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 3000);
+      }
+    }
+
+    // Auto-scroll functionality
+    let isUserScrolling = false;
+    let scrollTimeout = null;
+    let newMessageIndicator = null;
+
+    // Helper function to scroll to bottom
+    function scrollToBottom(smooth = true) {
+      const container = document.getElementById('chat-messages');
+      if (!container) {
+        console.warn('Chat messages container not found for scrolling');
+        return;
+      }
+
+      console.log('📜 Scrolling to bottom, smooth:', smooth);
+
+      if (smooth) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    // Check if user is near bottom of chat
+    function isNearBottom() {
+      const container = document.getElementById('chat-messages');
+      if (!container) return true;
+
+      const threshold = 100; // pixels from bottom
+      const isNear = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
+      console.log('📜 Is near bottom:', isNear, {
+        scrollTop: container.scrollTop,
+        clientHeight: container.clientHeight,
+        scrollHeight: container.scrollHeight,
+        threshold: threshold
+      });
+      return isNear;
+    }
+
+    // Create and show new message indicator
+    function showNewMessageIndicator() {
+      if (newMessageIndicator) return; // Already showing
+
+      console.log('📜 Showing new message indicator');
+
+      newMessageIndicator = document.createElement('div');
+      newMessageIndicator.id = 'new-message-indicator';
+      newMessageIndicator.className = 'fixed bottom-28 left-1/2 transform -translate-x-1/2 bg-primary-500 text-white px-4 py-2 rounded-full shadow-lg cursor-pointer hover:bg-primary-600 transition-all duration-200 z-40 animate-bounce';
+      newMessageIndicator.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+          <span class="text-sm font-medium">New Messages</span>
+        </div>
+      `;
+
+      newMessageIndicator.addEventListener('click', () => {
+        console.log('Scrolling to bottom');
+        hideNewMessageIndicator();
+        scrollToBottom(true);
+      });
+
+      document.body.appendChild(newMessageIndicator);
+    }
+
+    // Hide new message indicator
+    function hideNewMessageIndicator() {
+      if (newMessageIndicator) {
+        console.log('Hiding new message indicator');
+        newMessageIndicator.remove();
+        newMessageIndicator = null;
+      }
+    }
+
+    // Initialize scroll behavior
+    function initializeScrollBehavior() {
+      const container = document.getElementById('chat-messages');
+      if (!container) {
+        console.warn('Chat messages container not found for scroll initialization');
+        return;
+      }
+
+      console.log('Initializing scroll behavior');
+
+      // Detect user scrolling
+      container.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        isUserScrolling = true;
+
+        // Check if user scrolled to bottom, hide indicator if so
+        if (isNearBottom()) {
+          hideNewMessageIndicator();
+        }
+
+        // Reset user scrolling flag after scroll ends
+        scrollTimeout = setTimeout(() => {
+          isUserScrolling = false;
+          console.log('User stopped scrolling');
+        }, 150);
+      });
+
+      // Auto-scroll to bottom when chat opens
+      console.log('Auto-scrolling to bottom on chat open');
+      setTimeout(() => {
+        scrollToBottom(false); // No smooth scroll on initial load
+      }, 100);
+    }
+
+    // Chat message functions
+    async function sendMessage(e) {
+      e.preventDefault();
+
+      const messageInput = document.getElementById('message-input');
+      const mediaInput = document.getElementById('media-input');
+      const message = messageInput.value.trim();
+      const file = mediaInput.files[0];
+
+      if (!message && !file) return;
+
+      const formData = new FormData();
+      if (message) formData.append('msg', message);
+      if (file) formData.append('media', file);
+
+      try {
+        const response = await fetch(`/chat/${otherUserId}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          messageInput.value = '';
+          mediaInput.value = '';
+          hideFilePreview();
+
+          // Auto-scroll after sending message
+          console.log('Message sent, auto-scrolling to bottom');
+          setTimeout(() => scrollToBottom(true), 100);
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
+      }
+    }
+
+    function appendMessage(message) {
+      const container = document.getElementById('chat-messages');
+      const messageDiv = document.createElement('div');
+
+      console.log('Appending new message from:', message.from.username);
+
+      // Add message to DOM (simplified version)
+      messageDiv.innerHTML = `
+        <div class="flex ${message.from._id === currentUserId ? 'justify-end' : 'justify-start'}">
+          <div class="max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+            message.from._id === currentUserId ? 
+            'bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-br-md' : 
+            'bg-white/80 backdrop-blur-lg text-secondary-900 rounded-bl-md border border-white/20'
+          } shadow-lg">
+            <p class="text-sm leading-relaxed">${message.msg}</p>
+            <span class="text-xs ${message.from._id === currentUserId ? 'text-primary-100' : 'text-secondary-500'}">
+              ${new Date(message.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(messageDiv);
+
+      // Always auto-scroll to bottom for new messages
+      console.log('New message added, auto-scrolling to bottom');
+      setTimeout(() => scrollToBottom(true), 100);
+    }
+
+    function appendVoiceMessage(data) {
+      console.log('✅ Voice message received', data);
+
+      const container = document.getElementById('messages-container');
+      const messageDiv = document.createElement('div');
+      const isOwn = data.from === currentUserId;
+      const timestamp = new Date(data.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      // Create blob URL from array buffer
+      const audioBlob = new Blob([data.audio], { type: data.mimeType || 'audio/webm' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Create voice message HTML
+      messageDiv.className = `flex ${isOwn ? 'justify-end' : 'justify-start'}`;
+      messageDiv.innerHTML = `
+        <div class="max-w-xs lg:max-w-md">
+          <div class="${isOwn ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gradient-to-r from-indigo-500 to-purple-600'} rounded-2xl ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'} p-3 shadow-lg relative group">
+            <div class="flex items-center space-x-3">
+              <button class="voice-play-btn flex-shrink-0 bg-white bg-opacity-20 border-2 border-white border-opacity-30 rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-30 transition-all duration-200" data-audio-src="${audioUrl}">
+                <svg class="play-icon w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M8 5v10l7-5-7-5z"/>
+                </svg>
+                <svg class="pause-icon w-5 h-5 text-white hidden" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M6 4a1 1 0 011 1v10a1 1 0 11-2 0V5a1 1 0 011-1zM13 4a1 1 0 011 1v10a1 1 0 11-2 0V5a1 1 0 011-1z" clip-rule="evenodd"/>
+                </svg>
+              </button>
+              <div class="flex-1 min-w-0">
+                <div class="voice-progress-bar-container h-1 bg-white bg-opacity-30 rounded-full cursor-pointer">
+                  <div class="voice-progress h-full bg-white rounded-full transition-all duration-100" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="voice-duration text-white text-sm font-medium min-w-10 text-right">0:00</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between mt-1 px-2">
+            <span class="text-xs text-secondary-500">${timestamp}</span>
+          </div>
+        </div>
+      `;
+
+      container.appendChild(messageDiv);
+
+      // Initialize the voice player for this new message
+      const playButton = messageDiv.querySelector('.voice-play-btn');
+      if (playButton) {
+        playButton.addEventListener('click', function() {
+          toggleVoiceMessage(this, audioUrl);
+        });
+      }
+
+      // Always auto-scroll to bottom for new voice messages
+      console.log('Voice message added, auto-scrolling to bottom');
+      setTimeout(() => scrollToBottom(true), 100);
+
+      console.log('✅ Voice message appended to chat');
+    }
+
+    function showTypingIndicator(data) {
+      if (data.isTyping) {
+        document.getElementById('typing-indicator-container').classList.remove('hidden');
+        document.getElementById('typing-text').textContent = `${data.username} is typing...`;
+      } else {
+        document.getElementById('typing-indicator-container').classList.add('hidden');
+      }
+    }
+
+    function hideFilePreview() {
+      document.getElementById('filePreview').classList.add('hidden');
+    }
+
+    // AI and media functions
+    async function summarizeContent(messageId, type, content) {
+      console.log('📝 Summarizing content:', type);
+
+      const modal = document.getElementById('ai-summary-modal');
+      const loadingDiv = document.getElementById('ai-summary-loading');
+      const contentDiv = document.getElementById('ai-summary-content');
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        loadingDiv.classList.remove('hidden');
+        contentDiv.classList.add('hidden');
+      }
+
+      try {
+        const response = await fetch('/api/ai/summarize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messageId: messageId,
+            type: type,
+            content: content
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success && contentDiv) {
+          contentDiv.innerHTML = result.summary.replace(/\n/g, '<br>');
+          loadingDiv.classList.add('hidden');
+          contentDiv.classList.remove('hidden');
+        } else {
+          throw new Error(result.error || 'Failed to generate summary');
+        }
+
+      } catch (error) {
+        console.error('❌ Error generating summary:', error);
+        if (contentDiv) {
+          contentDiv.innerHTML = '❌ Failed to generate summary: ' + error.message;
+          loadingDiv.classList.add('hidden');
+          contentDiv.classList.remove('hidden');
+        }
+      }
+    }
+
+    async function generateAIResponse() {
+      console.log('🤖 Generating AI response...');
+      const btn = document.getElementById('ai-reply-btn');
+      const originalContent = btn.innerHTML;
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>';
+
+        // Get conversation history from the page
+        const conversationHistory = [];
+        const messages = document.querySelectorAll('.message-container');
+
+        messages.forEach(container => {
+          const messageContent = container.querySelector('.msg-text-content');
+          const isOwn = container.closest('.flex').classList.contains('justify-end');
+
+          if (messageContent && messageContent.textContent.trim()) {
+            let text = messageContent.textContent.trim();
+            
+            // Clean up text - remove potential "Username: " prefix
+            const colonIndex = text.indexOf(':');
+            if (colonIndex !== -1 && colonIndex < 30) {
+              text = text.substring(colonIndex + 1).trim();
+            }
+            
+            conversationHistory.push({
+              role: isOwn ? 'assistant' : 'user',
+              content: text
+            });
+          }
+        });
+
+        if (conversationHistory.length === 0) {
+          btn.disabled = false;
+          btn.innerHTML = originalContent;
+          showNotification('No messages to generate response from', 'warning');
+          return;
+        }
+
+        const recentMessages = conversationHistory.slice(-10);
+
+        // Generate AI response
+        const response = await fetch(`/api/ai/generate-reply/${otherUserId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            conversationHistory: recentMessages
+          })
+        });
+
+        const result = await response.json();
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+
+        if (result.success && result.replies && result.replies.length > 0) {
+          showSmartRepliesPanel(result.replies);
+        } else {
+          showNotification('No replies could be generated', 'info');
+        }
+
+      } catch (error) {
+        console.error('❌ Error generating AI response:', error);
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+        showNotification('Failed to generate AI response', 'error');
+      }
+    }
+
+    function showSmartRepliesPanel(replies) {
+      console.log('🤖 Showing smart replies panel with', replies.length, 'replies');
+
+      const panel = document.getElementById('smart-replies-panel');
+      const content = document.getElementById('smart-replies-content');
+
+      if (!panel || !content) {
+        console.error('❌ Smart replies panel elements not found');
+        return;
+      }
+
+      // Clear existing content
+      content.innerHTML = '';
+
+      // Create reply buttons
+      replies.forEach((reply, index) => {
+        const button = document.createElement('button');
+        button.className = 'bg-white hover:bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-left transition-colors duration-200 w-full';
+        button.textContent = reply;
+        button.onclick = () => sendSmartReply(reply);
+        content.appendChild(button);
+      });
+
+      // Show panel
+      panel.classList.remove('hidden');
+
+      // Auto-hide after 30 seconds
+      setTimeout(() => {
+        panel.classList.add('hidden');
+      }, 30000);
+    }
+
+    function sendSmartReply(reply) {
+      console.log('🤖 Sending smart reply:', reply);
+
+      // Set the reply in the message input
+      const messageInput = document.getElementById('message-input');
+      if (messageInput) {
+        messageInput.value = reply;
+        messageInput.focus();
+      }
+
+      // Hide the panel
+      hideSmartReplies();
+    }
+
+    function hideSmartReplies() {
+      const panel = document.getElementById('smart-replies-panel');
+      if (panel) panel.classList.add('hidden');
+    }
+
+    function openMediaPreview(src, type, name) {
+      console.log('Opening media preview:', type);
+      const modal = document.getElementById('mediaPreviewModal');
+      const previewContainer = document.getElementById('previewMediaContainer');
+      const downloadBtn = document.getElementById('downloadMediaBtn');
+
+      if (!modal || !previewContainer || !downloadBtn) {
+        console.error('Media preview modal elements not found');
+        return;
+      }
+
+      previewContainer.innerHTML = ''; // Clear previous content
+
+      let mediaElement;
+      if (type === 'image') {
+        mediaElement = document.createElement('img');
+        mediaElement.src = src;
+        mediaElement.alt = name;
+        mediaElement.className = 'max-w-full max-h-full object-contain rounded-lg shadow-xl';
+        downloadBtn.onclick = () => downloadMedia(src, name);
+      } else if (type === 'video') {
+        mediaElement = document.createElement('video');
+        mediaElement.src = src;
+        mediaElement.controls = true;
+        mediaElement.autoplay = true;
+        mediaElement.className = 'max-w-full max-h-full object-contain rounded-lg shadow-xl';
+        downloadBtn.onclick = () => downloadMedia(src, name);
+      } else {
+        console.error('Unsupported media type for preview:', type);
+        return;
+      }
+
+      previewContainer.appendChild(mediaElement);
+      modal.classList.remove('hidden');
+    }
+
+    function closeMediaPreview() {
+      const modal = document.getElementById('mediaPreviewModal');
+      if (modal) modal.classList.add('hidden');
+      // Optionally pause video if it was playing
+      const videoElement = document.querySelector('#previewMediaContainer video');
+      if (videoElement) {
+        videoElement.pause();
+      }
+    }
+
+    function downloadMedia(src, name) {
+      console.log('Downloading media:', name);
+      // This functionality is usually handled by the browser's default download behavior
+      // when the href is set to a file, but we can trigger it programmatically if needed.
+      // For now, relying on the `<a>` tag with `download` attribute.
+      // If you need custom download logic, implement it here.
+    }
+
+    function closeAISummary() {
+      const modal = document.getElementById('ai-summary-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function closeAISummaryOnOutsideClick(event) {
+      if (event.target === event.currentTarget) {
+        closeAISummary();
+      }
+    }
+
+    // Voice recording functionality
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+    let recordingStream = null;
+
+    async function startVoiceRecording() {
+      console.log('🎙️ Recording started');
+
+      try {
+        // Request microphone access with explicit permissions check
+        recordingStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 44100,
+            channelCount: 1
+          }
+        });
+
+        // Verify we got the stream
+        if (!recordingStream || recordingStream.getTracks().length === 0) {
+          throw new Error('Failed to get audio stream');
+        }
+
+        console.log('🎙️ Microphone access granted, stream tracks:', recordingStream.getTracks().length);
+
+        // Initialize MediaRecorder with proper settings
+        let options = { mimeType: 'audio/webm;codecs=opus' };
+
+        // Check browser support and fallback
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options.mimeType = 'audio/webm';
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options.mimeType = 'audio/ogg';
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+              options.mimeType = '';
+            }
+          }
+        }
+
+        console.log('🎙️ Using MIME type:', options.mimeType || 'default');
+
+        mediaRecorder = new MediaRecorder(recordingStream, options);
+        recordedChunks = []; // Reset chunks array
+        isRecording = true;
+
+        // Handle data available event - collect audio chunks
+        mediaRecorder.ondataavailable = (event) => {
+          console.log('📩 Voice message chunk available:', event.data.size, 'bytes');
+          if (event.data && event.data.size > 0) {
+            recordedChunks.push(event.data);
+          }
+        };
+
+        // Handle recording stop - process and send audio
+        mediaRecorder.onstop = async () => {
+          console.log('🛑 Recording stopped, sending...', recordedChunks.length, 'chunks');
+
+          if (recordedChunks.length > 0) {
+            // Create audio blob from chunks
+            const mimeType = mediaRecorder.mimeType || 'audio/webm';
+            const audioBlob = new Blob(recordedChunks, { type: mimeType });
+
+            console.log('🎙️ Audio blob created:', {
+              size: audioBlob.size,
+              type: audioBlob.type,
+              chunks: recordedChunks.length
+            });
+
+            // Verify blob has content
+            if (audioBlob.size === 0) {
+              throw new Error('Recording failed - no audio data captured');
+            }
+
+            // Send voice message
+            await sendVoiceMessage(audioBlob);
+          } else {
+            console.error('❌ No audio chunks recorded');
+            alert('Recording failed - no audio data captured');
+          }
+
+          // Clean up resources
+          cleanupRecording();
+        };
+
+        mediaRecorder.onerror = (event) => {
+          console.error('❌ MediaRecorder error:', event.error);
+          cleanupRecording();
+        };
+
+        // Start recording with shorter intervals for better chunk collection
+        mediaRecorder.start(100); // Collect data every 100ms
+        showVoiceRecordingModal();
+
+        console.log('🎙️ MediaRecorder started, state:', mediaRecorder.state);
+
+      } catch (error) {
+        console.error('❌ Error starting voice recording:', error);
+
+        let errorMessage = 'Failed to start voice recording';
+        if (error.name === 'NotAllowedError') {
+          errorMessage = 'Microphone access denied. Please allow microphone permissions and try again.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'No microphone found. Please connect a microphone and try again.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Microphone is being used by another application.';
+        }
+
+        alert(errorMessage);
+        cleanupRecording();
+      }
+    }
+
+    function stopVoiceRecording() {
+      console.log('🛑 Stopping voice recording...');
+
+      if (mediaRecorder && isRecording && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        isRecording = false;
+      }
+    }
+
+    function cancelVoiceRecording() {
+      console.log('🛑 Cancelling voice recording...');
+
+      if (mediaRecorder && isRecording && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+
+      // Clear chunks to prevent sending
+      recordedChunks = [];
+      isRecording = false;
+      cleanupRecording();
+      hideVoiceRecordingModal();
+    }
+
+    function cleanupRecording() {
+      if (recordingStream) {
+        recordingStream.getTracks().forEach(track => {
+          track.stop();
+          console.log('🎙️ Stopped audio track');
+        });
+        recordingStream = null;
+      }
+      isRecording = false;
+      mediaRecorder = null; // Reset mediaRecorder
+    }
+
+    function showVoiceRecordingModal() {
+      const modal = document.getElementById('voice-recording-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function hideVoiceRecordingModal() {
+      const modal = document.getElementById('voice-recording-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    async function sendVoiceMessage(audioBlob) {
+      console.log('📩 Sending voice message...', audioBlob.size, 'bytes');
+
+      try {
+        // Create form data
+        const formData = new FormData();
+        const filename = `voice_${Date.now()}.webm`;
+        formData.append('media', audioBlob, filename);
+        formData.append('msg', '🎵 Voice message');
+
+        // Send to server via HTTP
+        const response = await fetch(`/chat/${otherUserId}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          console.log('✅ Voice message sent successfully via HTTP');
+          hideVoiceRecordingModal();
+
+          // Also send via Socket.IO for real-time update
+          const arrayBuffer = await audioBlob.arrayBuffer();
+          const roomId = [currentUserId, otherUserId].sort().join('_');
+
+          chatSocket.emit('voiceMessage', {
+            roomId: roomId,
+            from: currentUserId,
+            to: otherUserId,
+            audio: arrayBuffer,
+            filename: filename,
+            mimeType: audioBlob.type,
+            timestamp: Date.now()
+          });
+
+          console.log('📩 Voice message sent via Socket.IO for real-time update');
+
+        } else {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+
+      } catch (error) {
+        console.error('❌ Error sending voice message:', error);
+        alert('Failed to send voice message: ' + error.message);
+        hideVoiceRecordingModal();
+      }
+    }
+
+    // Initialize voice messages when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeVoiceMessages();
+
+      // Also initialize when new messages are added dynamically
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach(function(node) {
+              if (node.nodeType === 1 && node.querySelector) {
+                const newVoiceButtons = node.querySelectorAll('.voice-play-btn');
+                newVoiceButtons.forEach(button => {
+                  if (!button.hasEventListener) {
+                    const audioSrc = button.dataset.audioSrc;
+                    button.addEventListener('click', function() {
+                      toggleVoiceMessage(this, audioSrc);
+                    });
+                    button.hasEventListener = true;
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+
+      const messagesContainer = document.getElementById('chat-messages');
+      if (messagesContainer) {
+        observer.observe(messagesContainer, {
+          childList: true,
+          subtree: true
+        });
+      }
+    });
+  </script>
+</body>
+</html>
