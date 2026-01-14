@@ -7,6 +7,14 @@ const User = require('./models/user');
 const Chat = require('./models/chat');
 const path = require('path');
 const app = express();
+
+// ----------- VIEW ENGINE & MIDDLEWARE -----------
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
 const multer = require('multer');
