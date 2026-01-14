@@ -198,7 +198,7 @@
                 <% } %>
 
                 <% if (chat.msg && !isAudio) { %>
-                  <p class="text-sm leading-relaxed msg-text-content"><%- chat.msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-primary-600 hover:underline break-all">$1</a>') %></p>
+                  <p class="text-sm leading-relaxed msg-text-content" data-original-text="<%= chat.msg %>"><%- chat.msg.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-primary-600 hover:underline break-all">$1</a>') %></p>
                 <% } %>
 
                 <div class="flex items-center justify-between mt-2">
@@ -448,9 +448,107 @@
     </div>
   </div>
 
+  <script>
+    async function translateIncomingMessage(msgElement) {
+      const textContent = msgElement.querySelector('.msg-text-content');
+      if (!textContent) return;
+
+      const originalText = textContent.getAttribute('data-original-text');
+      const targetLang = localStorage.getItem('app_language') || 'en';
+      
+      if (!originalText || (targetLang === 'en' && /^[a-zA-Z0-9\s.,!?-]+$/.test(originalText))) return;
+
+      try {
+        const response = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: originalText, targetLang })
+        });
+        const data = await response.json();
+        if (data.success && data.translatedText !== originalText) {
+          textContent.innerHTML = data.translatedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-primary-600 hover:underline break-all">$1</a>') + 
+                                 ` <br><span class="text-[10px] opacity-50 italic">Translated to ${targetLang.toUpperCase()}</span>`;
+        }
+      } catch (err) {
+        console.error('Translation failed', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const messages = document.querySelectorAll('.message-container:not(.own-message)');
+      messages.forEach(msg => translateIncomingMessage(msg));
+      
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              const msgContainer = node.querySelector('.message-container:not(.own-message)');
+              if (msgContainer) translateIncomingMessage(msgContainer);
+              else if (node.classList.contains('message-container') && !node.classList.contains('own-message')) {
+                translateIncomingMessage(node);
+              }
+            }
+          });
+        });
+      });
+      const chatMessages = document.getElementById('chat-messages');
+      if (chatMessages) {
+        observer.observe(chatMessages, { childList: true, subtree: true });
+      }
+    });
+  </script>
   <script src="/socket.io/socket.io.js"></script>
   <script src="/js/notifications.js"></script>
   <script src="/js/webrtc-debug.js"></script>
+  <script>
+    async function translateIncomingMessage(msgElement) {
+      const textContent = msgElement.querySelector('.msg-text-content');
+      if (!textContent) return;
+
+      const originalText = textContent.getAttribute('data-original-text');
+      const targetLang = localStorage.getItem('app_language') || 'en';
+      
+      if (!originalText || (targetLang === 'en' && /^[a-zA-Z0-9\s.,!?-]+$/.test(originalText))) return;
+
+      try {
+        const response = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: originalText, targetLang })
+        });
+        const data = await response.json();
+        if (data.success && data.translatedText !== originalText) {
+          textContent.innerHTML = data.translatedText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-primary-600 hover:underline break-all">$1</a>') + 
+                                 ` <br><span class="text-[10px] opacity-50 italic">Translated to ${targetLang.toUpperCase()}</span>`;
+        }
+      } catch (err) {
+        console.error('Translation failed', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const messages = document.querySelectorAll('.message-container:not(.own-message)');
+      messages.forEach(msg => translateIncomingMessage(msg));
+      
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              const msgContainer = node.querySelector('.message-container:not(.own-message)');
+              if (msgContainer) translateIncomingMessage(msgContainer);
+              else if (node.classList.contains('message-container') && !node.classList.contains('own-message')) {
+                translateIncomingMessage(node);
+              }
+            }
+          });
+        });
+      });
+      const chatMessages = document.getElementById('chat-messages');
+      if (chatMessages) {
+        observer.observe(chatMessages, { childList: true, subtree: true });
+      }
+    });
+  </script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     function openSecurityInfo() {

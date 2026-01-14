@@ -548,6 +548,20 @@ app.put('/message/:messageId', async (req, res) => {
 const AISuggestions = require('./utils/aiSuggestions');
 
 // ----------- API ROUTES -----------
+const { translateText } = require('./utils/translate');
+
+app.post('/api/translate', async (req, res) => {
+    try {
+        const { text, targetLang } = req.body;
+        if (!text) return res.status(400).json({ error: 'Text required' });
+        const translatedText = await translateText(text, targetLang || 'en');
+        res.json({ success: true, translatedText });
+    } catch (error) {
+        console.error('Translation API Error:', error);
+        res.status(500).json({ error: 'Translation failed' });
+    }
+});
+
 app.post('/api/get-ai-suggestions', (req, res) => {
     try {
         const { messages } = req.body;
