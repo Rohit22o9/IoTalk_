@@ -161,22 +161,28 @@
             color: #475569 !important;
         }
 
-        .light-theme #theme-menu {
+        .light-theme #theme-menu, .light-theme #language-dropdown {
             background-color: #ffffff !important;
             border-color: #e2e8f0 !important;
         }
 
-        .light-theme #theme-menu button {
+        .light-theme #theme-menu button, .light-theme #language-dropdown button {
             color: #475569 !important;
         }
 
-        .light-theme #theme-menu button:hover {
+        .light-theme #theme-menu button:hover, .light-theme #language-dropdown button:hover {
             background-color: #f1f5f9 !important;
             color: #0f172a !important;
         }
         
         .light-theme .divide-white\/5 > * + * {
             border-color: #e2e8f0 !important;
+        }
+
+        /* Fixed Dropdown Styling */
+        #language-dropdown, #theme-dropdown {
+            pointer-events: auto !important;
+            z-index: 100 !important;
         }
     </style>
     <script>
@@ -273,17 +279,27 @@
                     el.textContent = translations[lang][key];
                 }
             });
-            document.getElementById('current-lang').textContent = lang.toUpperCase();
+            const currentLangDisplay = document.getElementById('current-lang');
+            if (currentLangDisplay) {
+                currentLangDisplay.textContent = lang.toUpperCase();
+            }
         }
 
         function handleLanguageChange(lang) {
-            localStorage.setItem('language', lang);
+            localStorage.setItem('app_language', lang);
             updateContent(lang);
-            document.getElementById('language-dropdown').classList.add('hidden');
+            const langDropdown = document.getElementById('language-dropdown');
+            if (langDropdown) langDropdown.classList.add('hidden');
+        }
+
+        function handleThemeChange(theme) {
+            setTheme(theme);
+            const themeDropdown = document.getElementById('theme-dropdown');
+            if (themeDropdown) themeDropdown.classList.add('hidden');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const savedLang = localStorage.getItem('language') || 'en';
+            const savedLang = localStorage.getItem('app_language') || 'en';
             updateContent(savedLang);
 
             const themeBtn = document.getElementById('theme-menu-button');
