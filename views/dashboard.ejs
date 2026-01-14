@@ -191,12 +191,101 @@
             localStorage.setItem('theme', theme);
         }
 
-        function handleThemeChange(theme) {
-            setTheme(theme);
-            document.getElementById('theme-dropdown').classList.add('hidden');
+        const translations = {
+            en: {
+                theme: "Theme",
+                dark: "Dark",
+                light: "Light",
+                logged_in_as: "Logged in as",
+                syncpilot: "SyncPilot",
+                logout: "Logout",
+                security_status: "Security Status",
+                quantum_safe_active: "Quantum-Safe Active",
+                quantum_safe_desc: "This app uses hybrid encryption aligned with post-quantum security standards.",
+                security_dashboard: "Security Dashboard",
+                encryption: "Encryption",
+                enabled: "Enabled",
+                quantum_safe: "Quantum-Safe",
+                active: "Active",
+                ai_moderation: "AI Moderation",
+                running: "Running",
+                secure_calls: "Secure Calls",
+                quick_actions: "Quick Actions",
+                new_community: "New Community",
+                new_group: "New Group",
+                your_communities: "Your Communities",
+                places_you_belong: "Places you belong to"
+            },
+            hi: {
+                theme: "थीम",
+                dark: "डार्क",
+                light: "लाइट",
+                logged_in_as: "लॉग इन किया है",
+                syncpilot: "सिंकपायलट",
+                logout: "लॉगआउट",
+                security_status: "सुरक्षा स्थिति",
+                quantum_safe_active: "क्वांटम-सुरक्षित सक्रिय",
+                quantum_safe_desc: "यह ऐप पोस्ट-क्वांटम सुरक्षा मानकों के अनुरूप हाइब्रिड एन्क्रिप्शन का उपयोग करता है।",
+                security_dashboard: "सुरक्षा डैशबोर्ड",
+                encryption: "एन्क्रिप्शन",
+                enabled: "सक्षम",
+                quantum_safe: "क्वांटम-सुरक्षित",
+                active: "सक्रिय",
+                ai_moderation: "AI मॉडरेशन",
+                running: "चल रहा है",
+                secure_calls: "सुरक्षित कॉल",
+                quick_actions: "त्वरित कार्य",
+                new_community: "नई कम्युनिटी",
+                new_group: "नया ग्रुप",
+                your_communities: "आपकी कम्युनिटी",
+                places_you_belong: "वे स्थान जिनसे आप जुड़े हैं"
+            },
+            mr: {
+                theme: "थीम",
+                dark: "गडद",
+                light: "प्रकाश",
+                logged_in_as: "लॉग इन केले आहे",
+                syncpilot: "सिंकपायलट",
+                logout: "लॉगआउट",
+                security_status: "सुरक्षा स्थिती",
+                quantum_safe_active: "क्वांटम-सुरक्षित सक्रिय",
+                quantum_safe_desc: "हे अ‍ॅप पोस्ट-क्वांटम सुरक्षा मानकांशी सुसंगत हायब्रिड एन्क्रिप्शन वापरते.",
+                security_dashboard: "सुरक्षा डॅशबोर्ड",
+                encryption: "एन्क्रिप्शन",
+                enabled: "सक्षम",
+                quantum_safe: "क्वांटम-सुरक्षित",
+                active: "सक्रिय",
+                ai_moderation: "AI मॉडरेशन",
+                running: "चालू आहे",
+                secure_calls: "सुरक्षित कॉल",
+                quick_actions: "त्वरित कृती",
+                new_community: "नवीन समुदाय",
+                new_group: "नवीन गट",
+                your_communities: "तुमचे समुदाय",
+                places_you_belong: "तुम्ही ज्या ठिकाणांशी संबंधित आहात"
+            }
+        };
+
+        function updateContent(lang) {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            document.getElementById('current-lang').textContent = lang.toUpperCase();
+        }
+
+        function handleLanguageChange(lang) {
+            localStorage.setItem('language', lang);
+            updateContent(lang);
+            document.getElementById('language-dropdown').classList.add('hidden');
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            const savedLang = localStorage.getItem('language') || 'en';
+            updateContent(savedLang);
+
             const themeBtn = document.getElementById('theme-menu-button');
             const themeDropdown = document.getElementById('theme-dropdown');
             const langBtn = document.getElementById('language-menu-button');
